@@ -1,8 +1,9 @@
 %-----------------------------------------------
-% Feature extraction from the preprocessed data
+% model
 % Author: Kay Liu
 % https://github.com/KayLeonard/DRSleep
 %-----------------------------------------------
+addpath('dataset');
 
 %Reading of data
 tic
@@ -13,24 +14,26 @@ if ~exist('features', 'var') || isempty(features)
         feature_extraction;
     end
 end
+sub_num = size(features,1);
 
 %Normalization
 %--------------------
-features_norm = {};
-for kk = 1:size(features_sub,1)
-    x_eeg = features_sub{kk,1}';
-    x_ecg = features_sub{kk,2}';
-    x_eeg = zscore(x_eeg,0,2);
-    x_ecg = zscore(x_ecg,0,2);
-    features_norm{kk, 1} = x_eeg';
-    features_norm{kk, 2} = x_ecg';
-end
-
-datos_iniciales = features_norm;
+% features_norm = {};
+% for kk = 1:size(features_sub,1)
+%     x_eeg = features_sub{kk,1}';
+%     x_ecg = features_sub{kk,2}';
+%     x_eeg = zscore(x_eeg,0,2);
+%     x_ecg = zscore(x_ecg,0,2);
+%     features_norm{kk, 1} = x_eeg';
+%     features_norm{kk, 2} = x_ecg';
+% end
+% 
+% datos_iniciales = features_norm;
+datos_iniciales = features;
 
 %------------Parameters------------------
-caract       = 2;  %1=EEG 2=ECG
-nro_comp_eeg = 6;  %Number of components EEG
+caract       = 1;  %1=EEG 2=ECG
+nro_comp_eeg = 8;  %Number of components EEG
 nro_comp_ecg = 12; %Number of components ECG
 classification_type = 0;
 %0:   0,1,2,3,4,5 Six classes
@@ -42,7 +45,7 @@ if classification_type == 4
     m = 0; %1st specified class
     n = 1; %2nd specified class
 end
-classifier_type = 2;
+classifier_type = 4;
 %0:   Linear Discriminant Analysis
 %1:   Quadratic Discriminant Analysis
 %2:   Support Vector Machine
@@ -82,42 +85,43 @@ warning('off')
 features_pca = {};
 explained_eeg = [];
 explained_ecg = [];
-for kk = 1:size(features_sub,1)
-    x_eeg  = features_sub{kk,1};
-    x_ecg  = features_sub{kk,2};
-    [coeff,score,latent,tsquared,explained,mu] = pca(x_eeg);
-    explained_eeg = [explained_eeg; explained'];
-    features_pca{kk, 1} = score(:,1:nro_comp_eeg);
-    [coeff,score,latent,tsquared,explained,mu] = pca(x_ecg);
-    explained_ecg = [explained_ecg; explained'];
-    features_pca{kk, 2} = score(:,1:nro_comp_ecg);
-end
-features_sub = features_pca;
+% for kk = 1:size(features_sub,1)
+%     x_eeg  = features_sub{kk,1};
+%     x_ecg  = features_sub{kk,2};
+%     [coeff,score,latent,tsquared,explained,mu] = pca(x_eeg);
+%     explained_eeg = [explained_eeg; explained'];
+%     features_pca{kk, 1} = score(:,1:nro_comp_eeg);
+%     [coeff,score,latent,tsquared,explained,mu] = pca(x_ecg);
+%     explained_ecg = [explained_ecg; explained'];
+%     features_pca{kk, 2} = score(:,1:nro_comp_ecg);
+% end
+% features_sub = features_pca;
 
 %Estimate the explained variace for all the experiment
 %--------------------
-var_eeg = [];
-var_ecg = [];
-for kk = 1:size(features_sub,1)
-    var_eeg = [var_eeg; cumsum(explained_eeg(kk,1:nro_comp_eeg))];
-    var_ecg = [var_ecg; cumsum(explained_ecg(kk,1:nro_comp_ecg))];
-end
+% var_eeg = [];
+% var_ecg = [];
+% for kk = 1:size(features_sub,1)
+%     var_eeg = [var_eeg; cumsum(explained_eeg(kk,1:nro_comp_eeg))];
+% %     var_ecg = [var_ecg; cumsum(explained_ecg(kk,1:nro_comp_ecg))];
+% end
+% 
+% if caract == 1
+%     disp (['mean of explained variance of EEG : ' num2str(mean(var_eeg(:,nro_comp_eeg)))...
+%         '  ' num2str(nro_comp_eeg) '/' num2str(size(features_pca{1,1},2)) ' components'])
+% elseif caract == 2
+%     disp (['mean of explained variance of ECG : ' num2str(mean(var_ecg(:,nro_comp_ecg)))...
+%         '  ' num2str(nro_comp_ecg) '/' num2str(size(features_ecg{1,2},2)) ' components'])
+% end
+% warning('on')
 
-if caract == 1
-    disp (['mean of explained variance of EEG : ' num2str(mean(var_eeg(:,nro_comp_eeg)))...
-        '  ' num2str(nro_comp_eeg) '/' num2str(size(features_eeg,2)) ' components'])
-elseif caract == 2
-    disp (['mean of explained variance of ECG : ' num2str(mean(var_ecg(:,nro_comp_ecg)))...
-        '  ' num2str(nro_comp_ecg) '/' num2str(size(features_ecg,2)) ' components'])
-end
-warning('on')
-
+classes_sub = label;
 %Leave-one-out procedure
 %--------------------
 for kk= 1:size(features_sub,1)
     %Testing data
     data_testing     = features_sub{kk,caract};
-    classes_testing  = classes_sub{kk}';
+    classes_testing  = classes_sub{kk};
     %Training data
     data_training    = [];
     classes_training = [];
@@ -125,7 +129,7 @@ for kk= 1:size(features_sub,1)
         if (kkk ~= kk)
             temp             = features_sub{kkk,caract};
             data_training    = [data_training; temp];
-            temp             = classes_sub{kkk}';
+            temp             = classes_sub{kkk};
             classes_training = [classes_training; temp];
         end
     end
@@ -238,20 +242,25 @@ for kk= 1:size(features_sub,1)
     cp = classperf(classes_testing,classes_estim1);
     acc = round(cp.CorrectRate*100,2);
     
-    disp (['suj ' num2str(subs(kk)) '   accuracy: ' num2str(acc)])
+    disp (['suj ' num2str(kk) '   accuracy: ' num2str(acc)])
 %     figure; plot(classes_testing+0.1, 'b.'); hold on; plot(classes_estim1-0.1, 'r.');
 %     axis([-10 760 -0.3 5.9]);
 %     xlabel('Epochs');
 %     yticklabels({'Wake','REM','S1','S2','S3','S4'});
-%     legend('Estimated hypnogram', 'Real hypnogram');
-%     title('SVM');
+%     legend('Real hypnogram', 'Estimated hypnogram');
+%     title('NB');
     
     %----------------
     %Store results
     jjj = jjj + 1;
-    resul{jjj}.subject      = subs(kk);
+    resul{jjj}.subject      = kk;
     resul{jjj}.acc       = acc;
 end
+acc_sum = 0;
+for k = 1:sub_num
+    acc_sum = acc_sum + resul{k}.acc;
+end
+disp(['mean acc: ' num2str(acc_sum / sub_num)]);
 toc
 
 
