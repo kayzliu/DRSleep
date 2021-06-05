@@ -1,4 +1,4 @@
-# Dimension Reduction Methods Applied in Sleep Stage Analysis (DRSleep)
+# Dimension Reduction Methods Applied to Sleep Stage Analysis (DRSleep)
 ## Overview
 
 This is a complete procedure of sleep stage analysis with dimension reduction methods. The data is from [St. Vincent's University Hospital / University College Dublin Sleep Apnea Database](https://doi.org/10.13026/C26C7D). To run the code, use `main` command in MATLAB.
